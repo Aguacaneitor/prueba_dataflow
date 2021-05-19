@@ -1,13 +1,8 @@
 import apache_beam as beam
 from apache_beam.transforms.sql import SqlTransform
 import sys
-import schema
 import csv
 import argparse 
-
-
-def define_schema():
-    beam.coders.registry.register_coder(schema.schema, beam.coders.RowCoder)
 
 def print_row(element):
   print(element)
