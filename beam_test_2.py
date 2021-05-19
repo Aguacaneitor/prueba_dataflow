@@ -36,6 +36,15 @@ if __name__ == '__main__':
         prefijoSalida= 'salida'
     parser.parse_args()
     
+    #bigquery schema
+    
+    bq_schema = {'fields': [
+      {'name': 'fecha', 'type': 'STRING', 'mode': 'NULLABLE'},
+      {'name': 'fruta', 'type': 'STRING', 'mode': 'NULLABLE'},
+      {'name': 'cantidad', 'type': 'INTEGER', 'mode': 'NULLABLE'}]}
+    
+    #end bigquery schema    
+    
     #with beam.Pipeline(argv=sys.argv) as p:
     parsed_csv = (
                     p 
@@ -50,6 +59,14 @@ if __name__ == '__main__':
                     #GROUP BY fruta""")
                     | 'Groupby' >> beam.GroupBy('fruta').aggregate_field(lambda x: 1 if x.fruta else 0, sum, 'Cuenta')
                     | 'print' >> beam.FlatMap(print_row)
-                    | 'write' >> beam.io.WriteToText(prefijoSalida, file_name_suffix='.txt', header='fecha, fruta, cantidad')
+                    #| 'write' >> beam.io.WriteToText(prefijoSalida, file_name_suffix='.txt', header='fecha, fruta, cantidad')
+                    | 'bq_insert' >> beam.io.gcp.bigquery.WriteToBigQuery(
+                        table='prueba_dataflow',
+                        dataset ='CUSTOMER_EXPERIENCE',
+                        project ='apex-dataway',                        
+                        schema=bq_schema,
+                        create_disposition ='CREATE_IF_NEEDED',
+                        write_disposition='WRITE_APPEND'
+                        )
                  )
     p.run().wait_until_finish()
